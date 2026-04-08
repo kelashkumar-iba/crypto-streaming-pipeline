@@ -2,7 +2,7 @@
 
 **A production-grade, end-to-end real-time data pipeline** that ingests live cryptocurrency prices from 10 coins, streams them through a message broker, transforms raw data into analytics-ready marts, and visualizes insights on a live dashboard — fully containerized and orchestrated.
 
-> Built as part of the [Data Engineering Accelerated Mastery](https://github.com/kelash) program · April 2026
+> Built as part of the [Data Engineering Accelerated Mastery](https://github.com/kelashkumar-iba) program · April 2026
 
 ---
 
@@ -233,8 +233,8 @@ Python buffers stdout inside Docker containers (no TTY attached). Without this f
 **Kelash Kumar**
 BS Computer Science · Sukkur IBA University · Class of 2026
 
-[![GitHub](https://img.shields.io/badge/GitHub-kelash-181717?style=flat&logo=github)](https://github.com/kelash)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-kelash-0A66C2?style=flat&logo=linkedin)](https://linkedin.com/in/kelash)
+[![GitHub](https://img.shields.io/badge/GitHub-kelash-181717?style=flat&logo=github)](https://github.com/kelashkumar-iba)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-kelash-0A66C2?style=flat&logo=linkedin)](https://linkedin.com/in/kelashkumar-iba)
 
 ---
 
