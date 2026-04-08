@@ -1,0 +1,12 @@
+crypto_pipeline:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: postgres
+      port: 5432
+      user: crypto_user
+      pass: crypto_pass
+      dbname: crypto_db
+      schema: public
+      threads: 1

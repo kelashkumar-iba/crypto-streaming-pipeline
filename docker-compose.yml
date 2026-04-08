@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  redpanda:
+    image: redpandadata/redpanda:v23.3.6
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 512M
+      - --overprovisioned
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: crypto_db
+      POSTGRES_USER: crypto_user
+      POSTGRES_PASSWORD: crypto_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
+  producer:
+    build: ./producer
+    depends_on:
+      - redpanda
+    environment:
+      BOOTSTRAP_SERVERS: redpanda:29092
+      TOPIC_NAME: crypto-prices
+      PYTHONUNBUFFERED: "1"
+    restart: on-failure
+
+  consumer:
+    build: ./consumer
+    depends_on:
+      - redpanda
+      - postgres
+    environment:
+      BOOTSTRAP_SERVERS: redpanda:29092
+      TOPIC_NAME: crypto-prices
+      DB_HOST: postgres
+      DB_NAME: crypto_db
+      DB_USER: crypto_user
+      DB_PASSWORD: crypto_pass
+      PYTHONUNBUFFERED: "1"
+    restart: on-failure
+
+  dbt:
+    build: ./dbt_crypto
+    depends_on:
+      - postgres
+    environment:
+      PYTHONUNBUFFERED: "1"
+    profiles:
+      - dbt
+
+  airflow-init:
+    build: ./airflow
+    entrypoint: /bin/bash
+    command: -c "airflow db init && airflow users create --username admin --password admin --firstname Kelash --lastname Kumar --role Admin --email kelash@admin.com"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://crypto_user:crypto_pass@postgres:5432/crypto_db
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    depends_on:
+      - postgres
+
+  airflow-webserver:
+    build: ./airflow
+    command: airflow webserver --port 8080
+    ports:
+      - "8080:8080"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://crypto_user:crypto_pass@postgres:5432/crypto_db
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      PYTHONUNBUFFERED: "1"
+    depends_on:
+      - postgres
+      - airflow-init
+    restart: on-failure
+
+  airflow-scheduler:
+    build: ./airflow
+    command: airflow scheduler
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://crypto_user:crypto_pass@postgres:5432/crypto_db
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      PYTHONUNBUFFERED: "1"
+    depends_on:
+      - postgres
+      - airflow-init
+    restart: on-failure
+
+  metabase:
+    image: metabase/metabase:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+    environment:
+      MB_DB_TYPE: h2
+      MB_DB_FILE: /metabase-data/metabase.db
+    volumes:
+      - metabase-data:/metabase-data
+volumes:
+  pg-data:
+  metabase-data:
