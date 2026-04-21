@@ -110,7 +110,7 @@ CoinGecko API ──► Python Producer ──► Redpanda (Kafka) ──► Pyt
 
 ```bash
 # Clone the repository
-git clone https://github.com/kelash/crypto-streaming-pipeline.git
+git clone https://github.com/kelashkumar-iba/crypto-streaming-pipeline.git
 cd crypto-streaming-pipeline
 
 # Stop any local PostgreSQL to free port 5432
