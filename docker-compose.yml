@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   redpanda:
     image: redpandadata/redpanda:v23.3.6
@@ -10,21 +8,20 @@ services:
       - --overprovisioned
       - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
       - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
-    ports:
-      - "9092:9092"
-      - "29092:29092"
-
+    expose:
+      - "9092"
+      - "29092"
   postgres:
     image: postgres:14
     environment:
       POSTGRES_DB: crypto_db
       POSTGRES_USER: crypto_user
       POSTGRES_PASSWORD: crypto_pass
-    ports:
-      - "5432:5432"
+    expose:
+      - "5432"
     volumes:
       - pg-data:/var/lib/postgresql/data
-
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
   producer:
     build: ./producer
     depends_on:
@@ -34,7 +31,6 @@ services:
       TOPIC_NAME: crypto-prices
       PYTHONUNBUFFERED: "1"
     restart: on-failure
-
   consumer:
     build: ./consumer
     depends_on:
@@ -49,7 +45,6 @@ services:
       DB_PASSWORD: crypto_pass
       PYTHONUNBUFFERED: "1"
     restart: on-failure
-
   dbt:
     build: ./dbt_crypto
     depends_on:
@@ -58,7 +53,6 @@ services:
       PYTHONUNBUFFERED: "1"
     profiles:
       - dbt
-
   airflow-init:
     build: ./airflow
     entrypoint: /bin/bash
@@ -70,12 +64,11 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     depends_on:
       - postgres
-
   airflow-webserver:
     build: ./airflow
     command: airflow webserver --port 8080
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://crypto_user:crypto_pass@postgres:5432/crypto_db
@@ -86,7 +79,6 @@ services:
       - postgres
       - airflow-init
     restart: on-failure
-
   airflow-scheduler:
     build: ./airflow
     command: airflow scheduler
@@ -100,18 +92,33 @@ services:
       - postgres
       - airflow-init
     restart: on-failure
-
   metabase:
-    image: metabase/metabase:latest
-    ports:
-      - "3000:3000"
+    image: metabase/metabase:v0.60.2.5
+    expose:
+      - "3000"
     depends_on:
       - postgres
     environment:
-      MB_DB_TYPE: h2
-      MB_DB_FILE: /metabase-data/metabase.db
+      MB_DB_TYPE: postgres
+      MB_DB_HOST: postgres
+      MB_DB_PORT: 5432
+      MB_DB_DBNAME: metabase_db
+      MB_DB_USER: metabase_user
+      MB_DB_PASS: metabase_pass
+    restart: on-failure
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
-      - metabase-data:/metabase-data
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - metabase
+    restart: unless-stopped
 volumes:
   pg-data:
-  metabase-data:
+  caddy_data:
+  caddy_config:
