@@ -1,21 +1,21 @@
 import json
 import os
 import time
+
 import psycopg2
 from kafka import KafkaConsumer
 
-
-BOOTSTRAP_SERVERS = os.environ.get('BOOTSTRAP_SERVERS', 'localhost:9092')
-TOPIC_NAME = os.environ.get('TOPIC_NAME', 'crypto-prices')
-DB_HOST = os.environ.get('DB_HOST', 'localhost')
-DB_NAME = os.environ.get('DB_NAME', 'crypto_db')
-DB_USER = os.environ.get('DB_USER', 'crypto_user')
-DB_PASSWORD = os.environ.get('DB_PASSWORD', 'crypto_pass')
+BOOTSTRAP_SERVERS = os.environ.get("BOOTSTRAP_SERVERS", "localhost:9092")
+TOPIC_NAME = os.environ.get("TOPIC_NAME", "crypto-prices")
+DB_HOST = os.environ.get("DB_HOST", "localhost")
+DB_NAME = os.environ.get("DB_NAME", "crypto_db")
+DB_USER = os.environ.get("DB_USER", "crypto_user")
+DB_PASSWORD = os.environ.get("DB_PASSWORD", "crypto_pass")
 
 
 def safe_deserializer(v):
     try:
-        return json.loads(v.decode('utf-8'))
+        return json.loads(v.decode("utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError) as e:
         print(f"Bad message skipped: {e}")
         return None
@@ -25,10 +25,7 @@ def connect_postgres():
     for attempt in range(10):
         try:
             conn = psycopg2.connect(
-                host=DB_HOST,
-                dbname=DB_NAME,
-                user=DB_USER,
-                password=DB_PASSWORD
+                host=DB_HOST, dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD
             )
             print("Connected to PostgreSQL.")
             return conn
@@ -60,9 +57,9 @@ def create_consumer():
             consumer = KafkaConsumer(
                 TOPIC_NAME,
                 bootstrap_servers=BOOTSTRAP_SERVERS,
-                group_id='crypto-consumer-group',
+                group_id="crypto-consumer-group",
                 value_deserializer=safe_deserializer,
-                auto_offset_reset='earliest'
+                auto_offset_reset="earliest",
             )
             print("Connected to Redpanda.")
             return consumer
@@ -85,15 +82,18 @@ def main():
         data = message.value
         try:
             with conn.cursor() as cur:
-                cur.execute("""
+                cur.execute(
+                    """
                     INSERT INTO raw_crypto_prices (coin, price_usd, change_24h, last_updated)
                     VALUES (%s, %s, %s, %s)
-                """, (
-                    data.get('coin'),
-                    data.get('price_usd'),
-                    data.get('change_24h'),
-                    data.get('last_updated'),
-                ))
+                """,
+                    (
+                        data.get("coin"),
+                        data.get("price_usd"),
+                        data.get("change_24h"),
+                        data.get("last_updated"),
+                    ),
+                )
             conn.commit()
             print(f"Inserted: {data.get('coin')} @ ${data.get('price_usd')}")
 
@@ -102,5 +102,5 @@ def main():
             conn.rollback()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

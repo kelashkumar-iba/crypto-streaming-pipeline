@@ -1,14 +1,15 @@
 import json
 import os
 import time
+
 import requests
 from kafka import KafkaProducer
 
-BOOTSTRAP_SERVERS = os.environ.get('BOOTSTRAP_SERVERS', 'localhost:9092')
-TOPIC_NAME = os.environ.get('TOPIC_NAME', 'crypto-prices')
+BOOTSTRAP_SERVERS = os.environ.get("BOOTSTRAP_SERVERS", "localhost:9092")
+TOPIC_NAME = os.environ.get("TOPIC_NAME", "crypto-prices")
 
-COINS = 'bitcoin,ethereum,solana,cardano,polkadot,chainlink,avalanche-2,polygon-ecosystem-token,dogecoin,shiba-inu'
-API_URL = 'https://api.coingecko.com/api/v3/simple/price'
+COINS = "bitcoin,ethereum,solana,cardano,polkadot,chainlink,avalanche-2,polygon-ecosystem-token,dogecoin,shiba-inu"
+API_URL = "https://api.coingecko.com/api/v3/simple/price"
 
 
 def create_producer():
@@ -16,7 +17,7 @@ def create_producer():
         try:
             producer = KafkaProducer(
                 bootstrap_servers=BOOTSTRAP_SERVERS,
-                value_serializer=lambda v: json.dumps(v).encode('utf-8')
+                value_serializer=lambda v: json.dumps(v).encode("utf-8"),
             )
             print("Connected to Redpanda.")
             return producer
@@ -28,14 +29,24 @@ def create_producer():
 
 def fetch_prices():
     params = {
-        'ids': COINS,
-        'vs_currencies': 'usd',
-        'include_24hr_change': 'true',
-        'include_last_updated_at': 'true'
+        "ids": COINS,
+        "vs_currencies": "usd",
+        "include_24hr_change": "true",
+        "include_last_updated_at": "true",
     }
     response = requests.get(API_URL, params=params)
     response.raise_for_status()
     return response.json()
+
+
+def build_message(coin, values):
+    """Build a message dict from a single coin's CoinGecko data."""
+    return {
+        "coin": coin,
+        "price_usd": values.get("usd"),
+        "change_24h": values.get("usd_24h_change"),
+        "last_updated": values.get("last_updated_at"),
+    }
 
 
 def main():
@@ -45,12 +56,7 @@ def main():
         try:
             data = fetch_prices()
             for coin, values in data.items():
-                message = {
-                    'coin': coin,
-                    'price_usd': values.get('usd'),
-                    'change_24h': values.get('usd_24h_change'),
-                    'last_updated': values.get('last_updated_at'),
-                }
+                message = build_message(coin, values)
                 producer.send(TOPIC_NAME, value=message)
                 print(f"Sent: {message}")
 
@@ -65,5 +71,5 @@ def main():
             time.sleep(10)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
