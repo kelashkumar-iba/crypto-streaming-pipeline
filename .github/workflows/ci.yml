@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run ruff (lint check)
+        run: ruff check .
+
+      - name: Run ruff (format check)
+        run: ruff format --check .
+
+  test:
+    name: Test (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r producer/requirements.txt
+          pip install -r consumer/requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run pytest
+        run: pytest
+
+  build:
+    name: Build (docker)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate docker-compose syntax
+        run: docker compose config > /dev/null
+
+      - name: Build producer image
+        run: docker build -t crypto-producer:ci ./producer
+
+      - name: Build consumer image
+        run: docker build -t crypto-consumer:ci ./consumer
