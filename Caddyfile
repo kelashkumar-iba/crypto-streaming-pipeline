@@ -1,8 +1,22 @@
-# New primary domain
 streaming-pipeline.kelash.me {
-    reverse_proxy metabase:3000
-
     encode gzip
+
+    handle /airflow* {
+        reverse_proxy airflow-webserver:8080
+    }
+
+    handle /metabase* {
+        reverse_proxy metabase:3000
+    }
+
+    handle /api* {
+        reverse_proxy stats-api:8000
+    }
+
+    handle {
+        root * /srv/www
+        file_server
+    }
 
     log {
         output file /data/access.log {

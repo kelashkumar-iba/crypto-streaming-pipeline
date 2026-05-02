@@ -77,6 +77,8 @@ services:
       AIRFLOW__CORE__FERNET_KEY: ''
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       PYTHONUNBUFFERED: "1"
+      AIRFLOW__WEBSERVER__BASE_URL: "http://streaming-pipeline.kelash.me/airflow"
+      AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX: "true"
     depends_on:
       - postgres
       - airflow-init
@@ -107,6 +109,19 @@ services:
       MB_DB_DBNAME: metabase_db
       MB_DB_USER: metabase_user
       MB_DB_PASS: metabase_pass
+      MB_SITE_URL: "http://streaming-pipeline.kelash.me/metabase"
+    restart: unless-stopped
+  stats-api:
+    build: ./stats-api
+    expose:
+      - "8000"
+    environment:
+      DB_HOST: postgres
+      DB_NAME: crypto_db
+      DB_USER: crypto_user
+      DB_PASSWORD: crypto_pass
+    depends_on:
+      - postgres
     restart: unless-stopped
   caddy:
     image: caddy:2-alpine
@@ -115,10 +130,13 @@ services:
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./landing:/srv/www:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
       - metabase
+      - stats-api
+      - airflow-webserver
     restart: unless-stopped
 volumes:
   pg-data:
