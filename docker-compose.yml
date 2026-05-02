@@ -11,6 +11,7 @@ services:
     expose:
       - "9092"
       - "29092"
+    restart: unless-stopped
   postgres:
     image: postgres:14
     environment:
@@ -22,6 +23,7 @@ services:
     volumes:
       - pg-data:/var/lib/postgresql/data
       - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    restart: unless-stopped
   producer:
     build: ./producer
     depends_on:
@@ -30,7 +32,7 @@ services:
       BOOTSTRAP_SERVERS: redpanda:29092
       TOPIC_NAME: crypto-prices
       PYTHONUNBUFFERED: "1"
-    restart: on-failure
+    restart: unless-stopped
   consumer:
     build: ./consumer
     depends_on:
@@ -44,7 +46,7 @@ services:
       DB_USER: crypto_user
       DB_PASSWORD: crypto_pass
       PYTHONUNBUFFERED: "1"
-    restart: on-failure
+    restart: unless-stopped
   dbt:
     build: ./dbt_crypto
     depends_on:
@@ -78,7 +80,7 @@ services:
     depends_on:
       - postgres
       - airflow-init
-    restart: on-failure
+    restart: unless-stopped
   airflow-scheduler:
     build: ./airflow
     command: airflow scheduler
@@ -91,7 +93,7 @@ services:
     depends_on:
       - postgres
       - airflow-init
-    restart: on-failure
+    restart: unless-stopped
   metabase:
     image: metabase/metabase:v0.60.2.5
     expose:
@@ -105,7 +107,7 @@ services:
       MB_DB_DBNAME: metabase_db
       MB_DB_USER: metabase_user
       MB_DB_PASS: metabase_pass
-    restart: on-failure
+    restart: unless-stopped
   caddy:
     image: caddy:2-alpine
     ports:
