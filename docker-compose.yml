@@ -109,7 +109,6 @@ services:
       MB_DB_DBNAME: metabase_db
       MB_DB_USER: metabase_user
       MB_DB_PASS: metabase_pass
-      MB_SITE_URL: "http://streaming-pipeline.kelash.me/metabase"
     restart: unless-stopped
   stats-api:
     build: ./stats-api
