@@ -1,0 +1,75 @@
+version: 2
+
+sources:
+  - name: public
+    database: crypto_db
+    schema: public
+    tables:
+      - name: raw_crypto_prices
+        description: "Raw cryptocurrency prices ingested from Redpanda via consumer service"
+        freshness:
+          warn_after: {count: 10, period: minute}
+          error_after: {count: 30, period: minute}
+        loaded_at_field: ingested_at
+        columns:
+          - name: id
+            description: "Auto-incrementing primary key"
+            tests:
+              - not_null
+              - unique
+          - name: coin
+            description: "CoinGecko coin identifier"
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['avalanche-2', 'bitcoin', 'cardano', 'chainlink', 'dogecoin', 'ethereum', 'polkadot', 'polygon-ecosystem-token', 'shiba-inu', 'solana']
+          - name: price_usd
+            description: "Coin price in USD at time of ingestion"
+            tests:
+              - not_null
+          - name: ingested_at
+            description: "Timestamp when record was written to PostgreSQL"
+            tests:
+              - not_null
+
+models:
+  - name: stg_crypto_prices
+    description: "Staged crypto prices — cleaned and typed from raw source"
+    columns:
+      - name: id
+        description: "Primary key from source"
+        tests:
+          - not_null
+          - unique
+      - name: coin
+        description: "Coin identifier"
+        tests:
+          - not_null
+      - name: price_usd
+        description: "Price in USD"
+        tests:
+          - not_null
+
+  - name: int_crypto_metrics
+    description: "Intermediate model — adds lag, price change, and 5-period moving average per coin"
+    columns:
+      - name: coin
+        description: "Coin identifier"
+        tests:
+          - not_null
+      - name: price_usd
+        description: "Price in USD"
+        tests:
+          - not_null
+
+  - name: mart_daily_summary
+    description: "Daily OHLC-style summary per coin — avg, min, max, spread, reading count"
+    columns:
+      - name: coin
+        description: "Coin identifier"
+        tests:
+          - not_null
+      - name: trade_date
+        description: "Calendar date of aggregation"
+        tests:
+          - not_null
