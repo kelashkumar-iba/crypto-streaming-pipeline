@@ -45,3 +45,4 @@ secrets/
 # Docker volumes (in case anyone exports them)
 data/
 volumes/
+landing/index.html:Zone.Identifier
