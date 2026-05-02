@@ -1,3 +1,13 @@
-kelash-crypto.duckdns.org {
+# New primary domain
+streaming-pipeline.kelash.me {
     reverse_proxy metabase:3000
+
+    encode gzip
+
+    log {
+        output file /data/access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+    }
 }
