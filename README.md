@@ -13,7 +13,7 @@
 
 ## 🌐 Live Demo
 
-**🔗 [https://kelash-crypto.duckdns.org](https://kelash-crypto.duckdns.org)**
+**🔗 [https://streaming-pipeline.kelash.me](https://streaming-pipeline.kelash.me)**
 
 A live Metabase dashboard backed by data ingested in real-time from CoinGecko. The deployment runs 24/7 on an Oracle Cloud ARM VM (Mumbai region), reverse-proxied through Caddy with automatic Let's Encrypt SSL.
 
