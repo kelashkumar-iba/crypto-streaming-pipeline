@@ -58,7 +58,7 @@ Airflow orchestrates the dbt transformation chain on a 5-minute schedule, sittin
 
 ### How It Works
 
-1. **Producer** pulls real-time prices for 10 cryptocurrencies (Bitcoin, Ethereum, Solana, Cardano, Polkadot, Chainlink, Avalanche, Polygon, Dogecoin, Shiba Inu) from the CoinGecko API every 30 seconds.
+1. **Producer** pulls real-time prices for 10 cryptocurrencies (Bitcoin, Ethereum, Solana, Cardano, Polkadot, Chainlink, Avalanche, Polygon, Dogecoin, Shiba Inu) from the CoinGecko API every 60 seconds.
 2. **Redpanda** (Kafka-compatible message broker) decouples the producer from the consumer. Messages persist in the `crypto-prices` topic, surviving consumer downtime without data loss.
 3. **Consumer** reads messages from Redpanda, deserialises JSON with poison-pill protection, and inserts rows into PostgreSQL's `raw_crypto_prices` table.
 4. **dbt** transforms raw data through three layers:
@@ -390,7 +390,7 @@ Python buffers stdout inside Docker containers (no TTY attached). Without this f
 
 ![Producer Logs](screenshots/producer-logs.png)
 
-*Producer pulling live prices from CoinGecko API and publishing to Redpanda every 30 seconds.*
+*Producer pulling live prices from CoinGecko API and publishing to Redpanda every 60 seconds.*
 
 ### Consumer — Writing to PostgreSQL
 
