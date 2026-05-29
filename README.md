@@ -222,7 +222,7 @@ If any hook fails, the commit is rejected. Bad code never reaches CI, saving run
 
 ---
 
-## 🔒 Security Posture
+## 🔒 Security Posture 
 
 The deployment is hardened with **three independent layers** of network defense:
 
